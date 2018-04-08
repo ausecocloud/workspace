@@ -1,0 +1,363 @@
+openapi: "3.0.1"
+info:
+  title: "Workspace manager"
+  version: "1.0.0"
+  description: "Workspace server"
+  # termsOfService: "http://swagger.io/terms/"
+  # contact:
+  #   email: ""
+  #   name:
+  #   url:
+  # license:
+  #   name: "Apache 2.0"
+  #   url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+# servers:
+#   - url:
+#     description:
+#     variables:
+security:
+  - token_auth: []
+components:
+  schemas:
+    Project:
+      type: object
+      required: ["name"]
+      properties:
+        name:
+          type: string
+        owner:
+          type: string
+  responses:
+    "BadRequest":
+      description: "Bad request, most likely due to malformed parameters."
+    "Forbidden":
+      description: "Forbidden. User is not allowed to perform the request."
+    "Success":
+      description: "Request sucessfully executed."
+
+  # parameters:
+  # examples:
+  # requestBodies:
+  # headers:
+  securitySchemes:
+    # <key>: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#security-scheme-object
+    #   type: apiKey, http, oauth2, openIdConnect
+    #   description:
+    #   name: name of header, query or cookie parameter
+    #   in: query, header, cookie
+    #   scheme: bearer
+    #   bearerFormat: JWT
+    #   flows:
+    #   openIdConnectUrl:
+    # workspace_auth:
+    #   type: openIdConnect
+    #   description: use openIdConnect for auth
+    #   openIdConnectUrl: https://auth.ecocloud.org.au/auth/realms/test/.well-known/openid-configuration
+    token_auth:
+      type: http
+      description: send Authorization header with bearer token
+      scheme: bearer
+    # cookie_auth:
+    #   type: apiKey
+    #   description: use cookies to authenticate
+    #   name: oidc.session
+    #   in: cookie
+    # oauth:
+    #   type: oauth2
+    #   flows:
+    #     implicit:
+    #       authorizationUrl:
+    #       tokenUrl:
+    #       refreshUrl:
+    #       scopes:
+    #         scope1: use this to do what
+    #         scope2: sope2 description
+    #     authorizationCode:
+    #       authorizationUrl:
+    #       tokenUrl:
+    #       refreshUrl:
+    #       scopes:
+    #         scope1: use this to do what
+    #         scope2: sope2 description
+  # links:
+  # callbacks:
+tags:
+  - name: projects
+  - name: folders
+  - name: files
+# externalDocs
+paths:
+  /api/v1/projects:
+    summary: "Manage workspace elements."
+    description: ""
+    get:
+      tags:
+        - projects
+      summary: "Get list of projects"
+      description: ""
+      #externalDocs:
+      operationId: "list_projects"
+      parameters:
+        - in: "query"
+          name: "user"
+          description: "List projects of specific user"
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "List of available projects"
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags:
+        - projects
+      summary: "Create project"
+      description: ""
+      #externalDocs:
+      operationId: "create_project"
+      requestBody:
+        description: "Describe the project to create"
+        required: true
+        content:
+          "application/json":
+            schema:
+              $ref: "#/components/schemas/Project"
+      responses:
+        "204":
+          $ref: "#/components/responses/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    delete:
+      tags:
+        - projects
+      summary: "Delete project"
+      description: ""
+      #externalDocs:
+      operationId: "delete_project"
+      # security:
+      parameters:
+        - in: "query"
+          name: "name"
+          description: "Project name to delete."
+          required: true
+          schema:
+            type: string
+        - in: "query"
+          name: "user"
+          description: "Delete projects of specific user."
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "List of deleted objects"
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  type: string
+        "204":
+          $ref: "#/components/responses/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/folders:
+    summary: "Get folder listing for project and path"
+    description: ""
+    get:
+      tags:
+        - folders
+      summary: "list contents at path"
+      # security
+      operationId: "list_folders"
+      # externalDocs:
+      parameters:
+        - in: "query"
+          name: "project"
+          description: "Project Name"
+          required: true
+          schema:
+            type: string
+        - in: "query"
+          name: "path"
+          description: "Folder Name"
+          required: false
+          schema:
+            type: string
+        - in: "query"
+          name: "user"
+          description: "List contents for specific user"
+          required: false
+          schema:
+            type: string
+      responses:
+        "405":
+          description: "Invalid input"
+
+    post:
+      tags:
+        - folders
+      summary: "Create folder"
+      # security
+      operationId: "create_folder"
+      # externalDocs:
+      parameters:
+        - in: "query"
+          name: "project"
+          description: "Project Name"
+          required: true
+          schema:
+            type: string
+        - in: "query"
+          name: "path"
+          description: "Folder Name"
+          required: false
+          schema:
+            type: string
+        - in: "query"
+          name: "user"
+          description: "Create folder for specific user"
+          required: false
+          schema:
+            type: string
+      responses:
+        "405":
+          description: "Invalid input"
+
+    delete:
+      tags:
+        - folders
+      summary: "delete folder at path"
+      # security
+      operationId: "delete_folder"
+      # externalDocs:
+      parameters:
+        - in: "query"
+          name: "project"
+          description: "Project Name"
+          required: true
+          schema:
+            type: string
+        - in: "query"
+          name: "path"
+          description: "Folder Name"
+          required: false
+          schema:
+            type: string
+        - in: "query"
+          name: "user"
+          description: "Create project for specific user"
+          required: false
+          schema:
+            type: string
+      responses:
+        "405":
+          description: "Invalid input"
+
+  /api/v1/files:
+    summary: "Upload / Download files"
+    description: ""
+    get:
+      tags:
+        - files
+      summary: "download a file"
+      # security
+      operationId: "download_file"
+      # externalDocs:
+      parameters:
+        - in: "query"
+          name: "project"
+          description: "Project Name"
+          required: true
+          schema:
+            type: string
+        - in: "query"
+          name: "path"
+          description: "File Path"
+          required: true
+          schema:
+            type: string
+        - in: "query"
+          name: "name"
+          description: "File Name"
+          required: true
+          schema:
+            type: string
+        - in: "query"
+          name: "user"
+          description: "Download file for specific user"
+          required: false
+          schema:
+            type: string
+      responses:
+        "405":
+          description: "Invalid input"
+    post:
+      tags:
+        - files
+      summary: "upload a file"
+      # security:
+      operationId: "upload_file"
+      # externalDocs:
+      requestBody:
+        description: "Upload a file"
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                project:
+                  type: string
+                path:
+                  type: string
+                file:
+                  # default Content-Type for string/binary is `application/octet-stream`
+                  type: string
+                  format: binary
+      responses:
+        "405":
+          description: "Invalid input"
+    delete:
+      tags:
+        - files
+      summary: "delete a file"
+      # security
+      operationId: "delete_file"
+      # externalDocs:
+      parameters:
+        - in: "query"
+          name: "project"
+          description: "Project Name"
+          required: true
+          schema:
+            type: string
+        - in: "query"
+          name: "path"
+          description: "File Path"
+          required: true
+          schema:
+            type: string
+        - in: "query"
+          name: "user"
+          description: "Download file for specific user"
+          required: false
+          schema:
+            type: string
+      responses:
+        "405":
+          description: "Invalid input"

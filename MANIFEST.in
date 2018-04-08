@@ -1,0 +1,2 @@
+include *.txt *.ini *.rst
+recursive-include src *.png *.pt *.yaml *.js *.css
