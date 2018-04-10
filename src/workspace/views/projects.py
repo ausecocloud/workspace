@@ -19,13 +19,9 @@ def list_projects(request):
     ret = []
 
     for data in swift.list(userid):
-        # we should only have subdirs here
-        # TODO: warn / error if anything else is here
-        if data.get('subdir'):
-            ret.append({
-                'name': data['subdir'][len(userid):].strip('/'),
-                'owner': userid
-            })
+        # TODO: we should only have subdirs here,
+        #       maybe filter everything that's not 'application/directory'?
+        ret.append(data)
     return ret
 
 

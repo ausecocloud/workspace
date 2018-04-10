@@ -1,4 +1,4 @@
-from pyramid.httpexceptions import HTTPUnauthorized, HTTPBadRequest, HTTPFound
+from pyramid.httpexceptions import HTTPUnauthorized, HTTPBadRequest, HTTPFound, HTTPNoContent
 from pyramid.view import view_config
 
 from ..interfaces import ISwift
@@ -55,17 +55,9 @@ def upload_file(request):
         raise HTTPBadRequest('Invalid file name')
 
     swift = request.registry.getUtility(ISwift)
-    ret = {
-        'project': project,
-        'path': path,
-        'name': name,
-        'owner': userid,
-        'items': []
-    }
-    for res in swift.upload_file(userid, path, name,
-                                 file.file, file.type, file.length):
-        ret['items'].append(res)
-    return ret
+    swift.upload_file(userid, path, name,
+                      file.file, file.type, file.length)
+    return HTTPNoContent()
 
 
 @view_config(route_name='api_v1_files', renderer='json',
@@ -90,7 +82,5 @@ def delete_file(request):
     path = '/'.join((project, path))
 
     swift = request.registry.getUtility(ISwift)
-    ret = []
-    for res in swift.delete_file(userid, path, name):
-        ret.append(res)
-    return ret
+    swift.delete_file(userid, path, name)
+    return HTTPNoContent()

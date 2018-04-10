@@ -27,6 +27,24 @@ components:
           type: string
         owner:
           type: string
+    Folder:
+      type: object
+      required: ["name"]
+      properties:
+        name:
+          type: string
+    File:
+      type: object
+      required: ["name"]
+      properties:
+        name:
+          type: string
+        bytes:
+          type: integer
+        content_type:
+          type: string
+        # hash, last_modified
+
   responses:
     "BadRequest":
       description: "Bad request, most likely due to malformed parameters."
@@ -194,7 +212,7 @@ paths:
             type: string
         - in: "query"
           name: "path"
-          description: "Folder Name"
+          description: "Folder to list contents"
           required: false
           schema:
             type: string
@@ -205,6 +223,16 @@ paths:
           schema:
             type: string
       responses:
+        "200":
+          description: "List of contents"
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - $ref: "#/components/schemas/Folder"
+                    - $ref: "#/components/schemas/File"
         "405":
           description: "Invalid input"
 
@@ -215,6 +243,13 @@ paths:
       # security
       operationId: "create_folder"
       # externalDocs:
+      requestBody:
+        description: "Describe the folder to create"
+        required: true
+        content:
+          "application/json":
+            schema:
+              $ref: "#/components/schemas/Folder"
       parameters:
         - in: "query"
           name: "project"
@@ -224,7 +259,7 @@ paths:
             type: string
         - in: "query"
           name: "path"
-          description: "Folder Name"
+          description: "Parent Folder Name"
           required: false
           schema:
             type: string
@@ -235,8 +270,12 @@ paths:
           schema:
             type: string
       responses:
-        "405":
-          description: "Invalid input"
+        "204":
+          $ref: "#/components/responses/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
     delete:
       tags:
@@ -265,8 +304,21 @@ paths:
           schema:
             type: string
       responses:
-        "405":
-          description: "Invalid input"
+        "200":
+          description: "List of deleted objects"
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  type: string
+        "204":
+          $ref: "#/components/responses/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
 
   /api/v1/files:
     summary: "Upload / Download files"
@@ -330,8 +382,12 @@ paths:
                   type: string
                   format: binary
       responses:
-        "405":
-          description: "Invalid input"
+        "204":
+          $ref: "#/components/responses/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
     delete:
       tags:
         - files
@@ -353,11 +409,21 @@ paths:
           schema:
             type: string
         - in: "query"
+          name: "name"
+          description: "File Name"
+          required: true
+          schema:
+            type: string
+        - in: "query"
           name: "user"
           description: "Download file for specific user"
           required: false
           schema:
             type: string
       responses:
-        "405":
-          description: "Invalid input"
+        "204":
+          $ref: "#/components/responses/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"

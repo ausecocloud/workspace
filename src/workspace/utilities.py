@@ -7,6 +7,9 @@ from zope.interface import implementer
 
 from .interfaces import ISwift
 
+# TODO: there may be a weird situation where a folder can disappear
+#       if all files inside are deleted (e.g. if it was a pseudo folder)
+
 
 def get_os_settings(settings):
     # SwiftService reads standard env vars
@@ -117,12 +120,23 @@ class Swift(object):
                 for item in data['listing']:
                     # filter current folder
                     if item.get('subdir', '') == object_prefix:
-                        # a pseudo sub folder in current directory
+                        # ignore current directory
                         continue
-                    if item.get('name', '') == object_prefix:
-                        # the current directory as object
+                    elif item.get('name', '') == object_prefix:
+                        # ignore the current directory
                         continue
-                    yield item
+                    else:
+                        if item.get('subdir', None):
+                            # it is a pseudo dir
+                            yield {
+                                'name': item.get('subdir')[len(object_prefix):].strip('/'),
+                                'bytes': 0,
+                                'content_type': 'application/directory'
+                            }
+                        else:
+                            item['name'] = item['name'][len(object_prefix):]
+                            yield item
+                # skip error handling below
                 continue
             # TODO: we are raising an exception here... jumping out fo the
             #       generator.... should be fine for this method, bu
@@ -165,7 +179,7 @@ class Swift(object):
                 options={
                     'prefix': object_path
                 }):
-            yield res
+            yield res['object'][len(object_path):]
 
     def upload_file(self, user_id, path, name, file,
                     content_type='application/octet-stream',
@@ -184,8 +198,9 @@ class Swift(object):
                 'header': headers
             }
         )
-        res = self.swift.upload(self.container, [upload_obj])
-        return res
+        for res in self.swift.upload(self.container, [upload_obj]):
+            if res.get('error', None):
+                raise res['error']
 
     def delete_file(self, user_id, path, name):
         object_name = self.build_object_name(user_id, path, name)
@@ -195,7 +210,9 @@ class Swift(object):
             container=self.container,
             objects=[object_name]
         )
-        return res
+        for res in self.swift.delete(container=self.container, objects=[object_name]):
+            if res.get('error', None):
+                raise res['error']
 
     def generate_temp_url(self, user_id, path, name):
         object_name = self.build_object_name(user_id, path, name)

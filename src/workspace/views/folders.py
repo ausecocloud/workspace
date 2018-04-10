@@ -19,13 +19,9 @@ def list_contents(request):
     if not project or '/' in project:
         raise HTTPBadRequest('Invalid project name')
     path = params.get('path', '')
-    ret = {
-        'project': project,
-        'path': path,
-        'contents': []
-    }
+    ret = []
     for data in swift.list(userid, '/'.join((project, path))):
-        ret['contents'].append(data)
+        ret.append(data)
     return ret
 
 
@@ -35,18 +31,24 @@ def create_folder(request):
     userid = request.authenticated_userid
     if not userid:
         raise HTTPUnauthorized()
-    params = request.oas.validate_params().body
+    params = request.oas.validate_params()
+    query = params.parameters['query']
 
-    project = params.get('project', None)
+    project = query.get('project', None)
     if not project or '/' in project:
         raise HTTPBadRequest('Invalid project name')
 
-    path = params.get('path', None)
+    path = query.get('path', None)
     if not path:
         raise HTTPBadRequest('Invalid path name')
 
+    body = params.body
+    name = body.get('name', None)
+    if not name or '/' in name:
+        raise HTTPBadRequest('Invalid folder name')
+
     swift = request.registry.getUtility(ISwift)
-    res = swift.create_folder(userid, '/'.join((project, path)))
+    res = swift.create_folder(userid, '/'.join((project, path, name)))
     return HTTPNoContent()
 
 
