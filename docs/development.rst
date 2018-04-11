@@ -1,14 +1,10 @@
 
-
-Install:
-========
-
-    pyramid_debugtoolbar
-    pyramid_debugtoolbar_dogpile
-
-
 Build:
 ======
+
+This step is optional, because docker-compose should run ``build`` automatically.
+
+.. code:: bash
 
     docker-compose build
 
@@ -53,16 +49,23 @@ Create .env file:
 First time:
 ===========
 
+.. code:: bash
+
     docker-compose run --rm workspace pip install -e /code/workspace
 
 Start service:
 ==============
 
+.. code:: bash
+
     docker-compose up
 
-    or
+or
+
+.. code:: bash
 
     docker-compose run --rm --service-ports workspace bash
+
     pserve /code/workspace/development.ini --reload
 
 
@@ -72,6 +75,7 @@ Access:
     http://localhost:6543/
 
     http://localhost:6543/swagger
+
     http://localhost:6543/redoc
 
 
