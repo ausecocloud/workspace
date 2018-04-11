@@ -58,5 +58,5 @@ def delete_project(request):
     res = []
     for data in swift.delete_folder(userid, project):
         # TODO: this contains everything (userid/project/path..)
-        res.append(data['object'])
+        res.append(data)
     return res
