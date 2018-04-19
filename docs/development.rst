@@ -37,6 +37,7 @@ Create .env file:
 
     # Openid Connect and OAuth settings
     OAUTHLIB_INSECURE_TRANSPORT=1
+    OAUTHLIB_RELAX_TOKEN_SCOPE=1
     OIDC_ISSUER=
     OIDC_CLIENT_ID=
     OIDC_CLIENT_SECRET=
