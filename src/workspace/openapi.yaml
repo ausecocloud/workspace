@@ -18,6 +18,20 @@ info:
 security:
   - token_auth: []
 components:
+  parameters:
+    project:
+      name: project
+      in: query
+      description: "A Project name"
+      schema:
+        type: string
+    path:
+      name: path
+      in: query
+      description: "A Path name. May be empty or should start with '/'. A Path is always rooted at the project root."
+      allowEmptyValue: true
+      schema:
+        type: string
   schemas:
     Project:
       type: object
@@ -115,13 +129,6 @@ paths:
       description: ""
       #externalDocs:
       operationId: "list_projects"
-      parameters:
-        - in: "query"
-          name: "user"
-          description: "List projects of specific user"
-          required: false
-          schema:
-            type: string
       responses:
         "200":
           description: "List of available projects"
@@ -165,18 +172,7 @@ paths:
       operationId: "delete_project"
       # security:
       parameters:
-        - in: "query"
-          name: "name"
-          description: "Project name to delete."
-          required: true
-          schema:
-            type: string
-        - in: "query"
-          name: "user"
-          description: "Delete projects of specific user."
-          required: false
-          schema:
-            type: string
+        - $ref: "#/components/parameters/project"
       responses:
         "200":
           description: "List of deleted objects"
@@ -204,24 +200,8 @@ paths:
       operationId: "list_folders"
       # externalDocs:
       parameters:
-        - in: "query"
-          name: "project"
-          description: "Project Name"
-          required: true
-          schema:
-            type: string
-        - in: "query"
-          name: "path"
-          description: "Folder to list contents"
-          required: false
-          schema:
-            type: string
-        - in: "query"
-          name: "user"
-          description: "List contents for specific user"
-          required: false
-          schema:
-            type: string
+        - $ref: '#/components/parameters/project'
+        - $ref: '#/components/parameters/path'
       responses:
         "200":
           description: "List of contents"
@@ -251,24 +231,8 @@ paths:
             schema:
               $ref: "#/components/schemas/Folder"
       parameters:
-        - in: "query"
-          name: "project"
-          description: "Project Name"
-          required: true
-          schema:
-            type: string
-        - in: "query"
-          name: "path"
-          description: "Parent Folder Name"
-          required: false
-          schema:
-            type: string
-        - in: "query"
-          name: "user"
-          description: "Create folder for specific user"
-          required: false
-          schema:
-            type: string
+        - $ref: '#/components/parameters/project'
+        - $ref: '#/components/parameters/path'
       responses:
         "204":
           $ref: "#/components/responses/Success"
@@ -285,24 +249,8 @@ paths:
       operationId: "delete_folder"
       # externalDocs:
       parameters:
-        - in: "query"
-          name: "project"
-          description: "Project Name"
-          required: true
-          schema:
-            type: string
-        - in: "query"
-          name: "path"
-          description: "Folder Name"
-          required: false
-          schema:
-            type: string
-        - in: "query"
-          name: "user"
-          description: "Create project for specific user"
-          required: false
-          schema:
-            type: string
+        - $ref: '#/components/parameters/project'
+        - $ref: '#/components/parameters/path'
       responses:
         "200":
           description: "List of deleted objects"

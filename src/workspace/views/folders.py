@@ -18,7 +18,7 @@ def list_contents(request):
     project = params.get('project', None)
     if not project or '/' in project:
         raise HTTPBadRequest('Invalid project name')
-    path = params.get('path', '')
+    path = params.get('path', '').strip('/')
     ret = []
     for data in swift.list(userid, '/'.join((project, path))):
         ret.append(data)
@@ -38,9 +38,7 @@ def create_folder(request):
     if not project or '/' in project:
         raise HTTPBadRequest('Invalid project name')
 
-    path = query.get('path', None)
-    if not path:
-        raise HTTPBadRequest('Invalid path name')
+    path = query.get('path', '').strip('/')
 
     body = params.body
     name = body.get('name', None)
@@ -64,7 +62,9 @@ def delete_folder(request):
     if not project or '/' in project:
         raise HTTPBadRequest('Invalid project name')
 
-    path = params.get('path', None)
+    # TODO: maybd use name or foler parameter to identify folder to delee?
+    #       would be more consistent with the usage of path in rest of API
+    path = params.get('path', '').strip('/')
     if not path:
         raise HTTPBadRequest('Invalid path name')
 
