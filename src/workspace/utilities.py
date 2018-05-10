@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+import logging
 from urllib.parse import urlparse, urljoin
 import os
 
@@ -35,6 +37,21 @@ def get_swift_settings(settings):
         if var in os.environ:
             options[key] = os.environ[var]
     return options
+
+
+def safe_int(value):
+    try:
+        return int(value)
+    except Exception:
+        return None
+
+
+def safe_isodate(timestamp):
+    try:
+        return datetime.fromtimestamp(float(timestamp),
+                                      tz=timezone.utc).isoformat()
+    except Exception as e:
+        return None
 
 
 @implementer(ISwift)
@@ -76,6 +93,25 @@ class Swift(object):
             # -> it is a folder
             parts.append('')
         return container, '/'.join(parts)
+
+    def stat(self, user_id, path=''):
+        container, object_prefix = self.build_object_name(user_id, path)
+        if path:
+            # object stat requested
+            pass
+        else:
+            # container stat requested
+            stat = self.swift.stat(container=container)
+            headers = stat['headers']
+            return {
+                'used': safe_int(headers.get('x-container-bytes-used', None)),
+                'quota': safe_int(headers.get('x-container-meta-quota-bytes', None)),
+                'count': safe_int(headers.get('x-container-object-count', None)),
+                'created': safe_isodate(headers.get('x-timestamp', None)),
+            }
+            return {
+                stat.items
+            }
 
     def list(self, user_id, path=''):
         container, object_prefix = self.build_object_name(user_id, path)

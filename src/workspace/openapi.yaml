@@ -114,11 +114,52 @@ components:
   # links:
   # callbacks:
 tags:
+  - name: stat
   - name: projects
   - name: folders
   - name: files
 # externalDocs
 paths:
+  /api/v1/stat:
+    summary: "Return usage stats."
+    description: ""
+    get:
+      tags:
+        - stat
+      summary: "Get usage stats."
+      description: ""
+      operationId: "stat"
+      responses:
+        "200":
+          description: "Usage stats"
+          content:
+            "application/json":
+              schema:
+                type: object
+                properties:
+                  used:
+                    type: "integer"
+                    format: "int64"
+                    nullable: true
+                  quota:
+                    type: "integer"
+                    format: "int64"
+                    nullable: true
+                  count:
+                    type: "integer"
+                    format: "int64"
+                    nullable: true
+                  created:
+                    type: "string"
+                    format: "date-time"
+                    nullable: true
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+
+
   /api/v1/projects:
     summary: "Manage workspace elements."
     description: ""
