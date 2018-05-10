@@ -28,6 +28,8 @@ def get_swift_settings(settings):
         if key.startswith(prefix)
     }
     # check env vars as well
+    # TODO: rename WORKSPACE_CONTAINER to somethig with prefix or even
+    #       user container template
     for var, key in (('WORKSPACE_CONTAINER', 'container'),
                      ('WORKSPACE_TEMP_URL_KEY', 'temp_url_key')):
         if var in os.environ:
@@ -43,44 +45,10 @@ class Swift(object):
         self.swift = SwiftService(options)
 
         options = get_swift_settings(settings)
-        self.container = options['container']
         self.temp_url_key = options['temp_url_key']
-        self._init_swift()
+        # TODO: hard coded template
+        self.name_template = options['container'] + '_{name}'
 
-    def _init_swift(self):
-        # check if container exists
-        try:
-            res = self.swift.stat(container=self.container)
-        except SwiftError as e:
-            # TODO: should inspect error?
-            # container does not exist .... e.http_status == 404
-            # TODO: this will update the conatiner meta data if it already exists
-            res = self.swift.post(
-                container=self.container,
-                options={
-                    # swiftservice converts this to X-Container-Meta-Temp-Url-Key
-                    'meta': {
-                        'temp-url-key': self.temp_url_key
-                    }
-                }
-            )
-            if not res['success']:
-                raise res['error']
-        # TODO: should we really update this?
-        # TODO: maybe support key rollover ... e.g. move temp-url-key-2,
-        #       and add new key as -2
-        # if res['headers']['x-container-meta-temp-url-key'] != self.temp_url_key:
-        #     res = self.swift.post(
-        #         container=self.container,
-        #         options={
-        #             # swiftservice converts this to X-Container-Meta-Temp-Url-Key
-        #             'meta': {
-        #                 'temp-url-key': self.temp_url_key
-        #             }
-        #         }
-        #     )
-        # if not res['success']:
-        #     raise res['error']
 
     # TODO: this should be a module level method
     def build_object_name(self, user_id, path='', name=None):
@@ -88,7 +56,8 @@ class Swift(object):
         # - the returned does not have a leading slash
         if not user_id or '/' in user_id:
             raise ValueError('Invalid userid', user_id)
-        parts = [user_id]
+        container = self.name_template.format(name=user_id)
+        parts = []
         if path:
             # disallow '..'
             if '..' in path:
@@ -106,12 +75,12 @@ class Swift(object):
             # ensure we get a trailing slash if there is no name
             # -> it is a folder
             parts.append('')
-        return '/'.join(parts)
+        return container, '/'.join(parts)
 
     def list(self, user_id, path=''):
-        object_prefix = self.build_object_name(user_id, path)
+        container, object_prefix = self.build_object_name(user_id, path)
         for data in self.swift.list(
-                container=self.container,
+                container=container,
                 options={
                     'delimiter': '/',
                     'prefix': object_prefix
@@ -119,10 +88,10 @@ class Swift(object):
             if data['success']:
                 for item in data['listing']:
                     # filter current folder
-                    if item.get('subdir', '') == object_prefix:
+                    if item.get('subdir', None) == object_prefix:
                         # ignore current directory
                         continue
-                    elif item.get('name', '') == object_prefix:
+                    elif item.get('name', None) == object_prefix:
                         # ignore the current directory
                         continue
                     else:
@@ -139,7 +108,7 @@ class Swift(object):
                 # skip error handling below
                 continue
             # TODO: we are raising an exception here... jumping out fo the
-            #       generator.... should be fine for this method, bu
+            #       generator.... should be fine for this method, but
             #       does this have the potential to leak threads?
             #       SwiftService uses threads to generate results
             ex = data['error']
@@ -147,13 +116,12 @@ class Swift(object):
                 if not path and ex.exception.http_status == 404:
                     # ex.exception should be a ClientException, not found
                     # if path is empty, we ignore it, it means, the
-                    # user root folder does not exist yet.
-                    yield {'result': 'Not Found'}
+                    # user container does not exist yet.
                     break
             raise ex
 
     def create_folder(self, user_id, path=''):
-        object_path = self.build_object_name(user_id, path)
+        container, object_path = self.build_object_name(user_id, path)
 
         # create upload object
         object_path = SwiftUploadObject(
@@ -163,19 +131,35 @@ class Swift(object):
         )
 
         ret = []
-        for res in self.swift.upload(self.container, [object_path]):
+        for res in self.swift.upload(container, [object_path]):
             if not res['success']:
                 raise res['error']
+            if res['action'] == 'create_container':
+                # if res['response_dict']['reason'] == 'Created'
+                # status will be 202 if container already existed
+                if res['response_dict']['status'] == 201:
+                    # set up metadata for user container
+                    res = self.swift.post(
+                        container=container,
+                        options={
+                            # swiftservice converts this to X-Container-Meta-Temp-Url-Key
+                            'meta': {
+                                'temp-url-key': self.temp_url_key,
+                                # TODO: hard coded 10G quota
+                                'quota-bytes': '10000000'
+                            }
+                        }
+                    )
             else:
                 ret.append(res)
         return ret
 
     def delete_folder(self, user_id, path=''):
-        object_path = self.build_object_name(user_id, path)
+        container, object_path = self.build_object_name(user_id, path)
         # don't use delimiter here, otherwise swift.delete will only see
         # one level of subfolders and won't be able to delete everything
         for res in self.swift.delete(
-                container=self.container,
+                container=container,
                 options={
                     'prefix': object_path
                 }):
@@ -184,7 +168,7 @@ class Swift(object):
     def upload_file(self, user_id, path, name, file,
                     content_type='application/octet-stream',
                     content_length=-1):
-        object_name = self.build_object_name(user_id, path, name)
+        container, object_name = self.build_object_name(user_id, path, name)
         # prepend account and container to path
         headers = {
             'Content-Type': content_type or 'application/octet-stream'
@@ -198,30 +182,36 @@ class Swift(object):
                 'header': headers
             }
         )
-        for res in self.swift.upload(self.container, [upload_obj]):
+        log = logging.getLogger(__name__)
+        log.info('Tool Upload %s', upload_obj)
+        for res in self.swift.upload(container, [upload_obj]):
+            # Getting a funny response iterator here
+            # 1. action: create_container
+            # 2. action: upload_object
+            log.info('Tool Result %s', res)
             if res.get('error', None):
                 raise res['error']
 
     def delete_file(self, user_id, path, name):
-        object_name = self.build_object_name(user_id, path, name)
+        container, object_name = self.build_object_name(user_id, path, name)
         # TODO: could set options['prefix'] to make sure we don't delete anything
         #       outside project/folder
         res = self.swift.delete(
-            container=self.container,
+            container=container,
             objects=[object_name]
         )
-        for res in self.swift.delete(container=self.container, objects=[object_name]):
+        for res in self.swift.delete(container=container, objects=[object_name]):
             if res.get('error', None):
                 raise res['error']
 
     def generate_temp_url(self, user_id, path, name):
-        object_name = self.build_object_name(user_id, path, name)
+        container, object_name = self.build_object_name(user_id, path, name)
         # discover swift endpoint urls
         conn = get_conn(self.swift._options)
         url, token = conn.get_auth()
         urlparts = urlparse(url)
         # generate swift path /v1/<account>/<container>/<userid>/path
-        path = '/'.join((urlparts.path, self.container, object_name))
+        path = '/'.join((urlparts.path, container, object_name))
         # TODO: valid for 5 minutes
         temp_url = generate_temp_url(
             path, 300, self.temp_url_key, method='GET'
