@@ -36,9 +36,12 @@ def create_project(request):
     project = params.get('name', None)
     if not project or '/' in project:
         raise HTTPBadRequest('Invalid project name')
+    description = params.get('description', None)
+    if description and len(description) > 500:
+        raise HTTPBadRequest('Invalid project description')
 
     swift = request.registry.getUtility(ISwift)
-    res = swift.create_folder(userid, project)
+    res = swift.create_folder(userid, project, description)
     return HTTPNoContent()
 
 

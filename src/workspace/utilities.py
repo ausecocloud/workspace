@@ -3,7 +3,7 @@ import logging
 from urllib.parse import urlparse, urljoin
 import os
 
-from swiftclient.service import SwiftService, SwiftError, SwiftUploadObject, get_conn
+from swiftclient.service import SwiftService, SwiftError, SwiftUploadObject, SwiftPostObject, get_conn
 from swiftclient.utils import generate_temp_url
 from zope.interface import implementer
 
@@ -121,6 +121,9 @@ class Swift(object):
                     'delimiter': '/',
                     'prefix': object_prefix
                 }):
+            # TODO: we should make this a separate method for projects
+            #       or general, if we want more metadata about listed objects
+            projects = []
             if data['success']:
                 for item in data['listing']:
                     # filter current folder
@@ -133,16 +136,30 @@ class Swift(object):
                     else:
                         if item.get('subdir', None):
                             # it is a pseudo dir
-                            yield {
-                                'name': item.get('subdir')[len(object_prefix):].strip('/'),
-                                'bytes': 0,
-                                'content_type': 'application/directory'
-                            }
+                            if not path:
+                                # it is a project
+                                # remember as is to stat it later
+                                projects.append(item['subdir'])
+                            else:
+                                yield {
+                                    'name': item.get('subdir')[len(object_prefix):].strip('/'),
+                                    'bytes': 0,
+                                    'content_type': 'application/directory',
+                                }
                         else:
                             item['name'] = item['name'][len(object_prefix):]
                             yield item
-                # skip error handling below
-                continue
+                # yield projects
+                if projects:
+                    for res in self.swift.stat(container, projects):
+                        yield {
+                            'name': res['object'][len(object_prefix):].strip('/'),
+                            'description': res['headers'].get('x-object-meta-description', ''),
+                            'created': safe_isodate(res['headers'].get('x-timestamp', None)),
+                            'modified': safe_isodate(res['headers'].get('x-object-meta-mtime', None)),
+                        }
+            # skip error handling below
+            continue
             # TODO: we are raising an exception here... jumping out fo the
             #       generator.... should be fine for this method, but
             #       does this have the potential to leak threads?
@@ -156,17 +173,22 @@ class Swift(object):
                     break
             raise ex
 
-    def create_folder(self, user_id, path=''):
+    def create_folder(self, user_id, path='', description=None):
         container, object_path = self.build_object_name(user_id, path)
 
         # create upload object
         object_path = SwiftUploadObject(
             None,
             object_name=object_path,
-            options={'dir_marker': True}
+            options={
+                'dir_marker': True,
+                'meta': {
+                    'description': description or '',
+                },
+            }
         )
 
-        ret = []
+        folders = []
         for res in self.swift.upload(container, [object_path]):
             if not res['success']:
                 raise res['error']
@@ -186,8 +208,27 @@ class Swift(object):
                             }
                         }
                     )
-            else:
-                ret.append(res)
+            # TODO: project only:
+            if res['action'] == 'create_dir_marker':
+                meta = {}
+                if description:
+                    meta['description'] = description
+                folder = SwiftPostObject(
+                    object_name=res['object'],
+                    options={
+                        'header': res['headers'],
+                        'meta': meta,
+                    }
+                )
+                folders.append(folder)
+        # TODO: check whether we should use post above instead of upload
+        #       maybe we can avoid calling swift twice?
+        #       also woke sure container get's created in case of post
+        ret = []
+        for res in self.swift.post(container, folders):
+            if not res['success']:
+                raise res['error']
+            ret.append(res)
         return ret
 
     def delete_folder(self, user_id, path=''):

@@ -39,6 +39,9 @@ components:
       properties:
         name:
           type: string
+        description:
+          type: string
+          maxLength: 500
         owner:
           type: string
     Folder:
