@@ -182,7 +182,7 @@ class Swift(object):
                             'meta': {
                                 'temp-url-key': self.temp_url_key,
                                 # TODO: hard coded 10G quota
-                                'quota-bytes': '10000000'
+                                'quota-bytes': str(int(10e9)),
                             }
                         }
                     )

@@ -158,8 +158,6 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-
-
   /api/v1/projects:
     summary: "Manage workspace elements."
     description: ""
