@@ -53,7 +53,7 @@ def delete_project(request):
         raise HTTPUnauthorized()
     params = request.oas.validate_params().parameters['query']
 
-    project = params.get('name', None)
+    project = params.get('project', None)
     if not project or '/' in project:
         raise HTTPBadRequest('Invalid project name')
 
