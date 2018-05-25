@@ -2,6 +2,9 @@ from pyramid.config import Configurator
 
 from .resources import Root
 
+# FIXME: load patch into process
+import workspace.patch
+
 
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.

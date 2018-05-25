@@ -355,22 +355,27 @@ paths:
       # security:
       operationId: "upload_file"
       # externalDocs:
+      parameters:
+        - in: "query"
+          name: "project"
+          description: "Project Name"
+          required: true
+          schema:
+            type: string
+        - in: "query"
+          name: "path"
+          description: "File path including file name"
+          required: true
+          schema:
+            type: string
       requestBody:
         description: "Upload a file"
         required: true
         content:
-          multipart/form-data:
+          "*/*":
             schema:
-              type: object
-              properties:
-                project:
-                  type: string
-                path:
-                  type: string
-                file:
-                  # default Content-Type for string/binary is `application/octet-stream`
-                  type: string
-                  format: binary
+              type: string
+              format: binary
       responses:
         "204":
           $ref: "#/components/responses/Success"

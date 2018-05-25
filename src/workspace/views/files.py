@@ -1,3 +1,5 @@
+import logging
+
 from pyramid.httpexceptions import HTTPUnauthorized, HTTPBadRequest, HTTPFound, HTTPNoContent
 from pyramid.view import view_config
 
@@ -36,8 +38,12 @@ def upload_file(request):
     if not userid:
         raise HTTPUnauthorized()
 
-    params = request.oas.validate_params().body
+    # TODO: openapi-core does not support media type wildcards
+    #       for now we just handle the request validation manually.
 
+    params = request.params
+
+    # required parameters
     project = params.get('project', None)
     if not project or '/' in project:
         raise HTTPBadRequest('Invalid project name')
@@ -45,18 +51,28 @@ def upload_file(request):
     if not path:
         raise HTTPBadRequest('Invalid path')
     path = '/'.join((project, path))
-    file = params.get('file', None)
-    if file is None:
-        raise HTTPBadRequest('Invalid file')
-    name = params.get('name', None)
-    if name is None:
-        name = file.filename
-    if name is None:
+    # get path and file name; there is always one '/' in path, 'project/path|name'
+    path, name = path.rsplit('/', 1)
+    if not name:
         raise HTTPBadRequest('Invalid file name')
 
+    # file content
+    if not request.content_length:
+        raise HTTPBadRequest('Missing Content-Length header')
+
+    # TODO: We use body_file_seekable here, to allow swiftclient to retry the
+    #       upload if necessary. However, this may mean, that the file get's
+    #       cached on local disk before it is being passed on to swift.
+    file = request.body_file_seekable
+    if not file:
+        raise HTTPBadRequest('Invalid file')
+
     swift = request.registry.getUtility(ISwift)
+    log = logging.getLogger(__name__)
+    log.info('Start Swift upload %s', name)
     swift.upload_file(userid, path, name,
-                      file.file, file.type, file.length)
+                      file, request.content_type, request.content_length)
+    log.info('Finished Swift upload %s', name)
     return HTTPNoContent()
 
 
