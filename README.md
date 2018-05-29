@@ -1,3 +1,4 @@
+
 # ecocloud Workspace API
 
 **Requirements**
@@ -45,14 +46,18 @@ OIDC_CLIENT_SECRET=[can be found at *link to tpm*]
 SESSION_SECRET=[use command above to generate a key]
 
 ```
-*first time setup*
 
+First time setup
+```sh
 docker-compose run workspace bash
+
 pip install -e /code/workspace
+
 exit
+```
 
-*end first time setup*
-
+To start services
+```sh
 docker-compose up
-
+```
 Visit [http://localhost:6543/swagger](http://localhost:6543/swagger) to confirm working service/api
