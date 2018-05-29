@@ -18,4 +18,3 @@ def my_view(request):
         'project': 'workspace',
         'user': get_user(request)
     }
-

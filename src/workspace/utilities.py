@@ -3,8 +3,10 @@ import logging
 from urllib.parse import urlparse, urljoin
 import os
 
-from swiftclient.service import SwiftService, SwiftError, SwiftUploadObject, SwiftPostObject, get_conn
-from swiftclient.utils import generate_temp_url
+from swiftclient.service import (
+    SwiftService, SwiftError, SwiftUploadObject, SwiftPostObject, get_conn
+)
+from swiftclient.utils import generate_temp_url, LengthWrapper
 from zope.interface import implementer
 
 from .interfaces import ISwift
@@ -250,10 +252,10 @@ class Swift(object):
         headers = {
             'Content-Type': content_type or 'application/octet-stream'
         }
-        if content_length >= 0:
-            headers['Content-Length'] = content_length
+        # if content_length >= 0:
+        #     headers['Content-Length'] = str(content_length)
         upload_obj = SwiftUploadObject(
-            source=file,
+            source=LengthWrapper(file, content_length, True),
             object_name=object_name,
             options={
                 'header': headers
@@ -267,12 +269,15 @@ class Swift(object):
             # 2. action: upload_object
             log.info('Tool Result %s', res)
             if res.get('error', None):
+                # res['error'].http_status == 413:
+                # -> Request Entity Too Large
+                # res['error'].http_resonse_content == 'Upload exceeds quota'
                 raise res['error']
 
     def delete_file(self, user_id, path, name):
         container, object_name = self.build_object_name(user_id, path, name)
-        # TODO: could set options['prefix'] to make sure we don't delete anything
-        #       outside project/folder
+        # TODO: could set options['prefix'] to make sure we don't delete
+        #       anything outside project/folder
         res = self.swift.delete(
             container=container,
             objects=[object_name]
