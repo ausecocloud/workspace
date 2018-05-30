@@ -1,4 +1,5 @@
 
+
 # ecocloud Workspace API
 
 **Requirements**
@@ -37,9 +38,9 @@ WORKSPACE_TEMP_URL_KEY=[use command above to generate a key]
 # OpenID Connect and OAuth Settings
 OAUTHLIB_INSECURE_TRANSPORT=1
 OAUTHLIB_RELAX_TOKEN_SCOPE=1
-OIDC_ISSUER=[can be found at *link to tpm*]
+OIDC_ISSUER=[can be found in https://ersadm-prd-gc.rcs.griffith.edu.au/tpm/index.php/pwd/view_notes/222 (TPM)]
 OIDC_CLIENT_ID=local
-OIDC_CLIENT_SECRET=[can be found at *link to tpm*]
+OIDC_CLIENT_SECRET=[can be found in https://ersadm-prd-gc.rcs.griffith.edu.au/tpm/index.php/pwd/view_notes/222 (TPM)]
 
 # Session secret is optional
 # openssl rand 32 -hex
