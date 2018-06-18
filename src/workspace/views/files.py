@@ -64,6 +64,7 @@ def upload_file(request):
     #       upload if necessary. However, this may mean, that the file get's
     #       cached on local disk before it is being passed on to swift.
     file = request.body_file_seekable
+    file.seek(0)
     if not file:
         raise HTTPBadRequest('Invalid file')
 
