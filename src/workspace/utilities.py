@@ -154,11 +154,13 @@ class Swift(object):
                 # yield projects
                 if projects:
                     for res in self.swift.stat(container, projects):
+                        # if folder is not a real object, we may not have headers
+                        headers = res.get('headers', {})
                         yield {
                             'name': res['object'][len(object_prefix):].strip('/'),
-                            'description': res['headers'].get('x-object-meta-description', ''),
-                            'created': safe_isodate(res['headers'].get('x-timestamp', None)),
-                            'modified': safe_isodate(res['headers'].get('x-object-meta-mtime', None)),
+                            'description': headers.get('x-object-meta-description', ''),
+                            'created': safe_isodate(headers.get('x-timestamp', None)),
+                            'modified': safe_isodate(headers.get('x-object-meta-mtime', None)),
                         }
             # skip error handling below
             continue
