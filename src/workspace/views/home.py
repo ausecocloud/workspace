@@ -6,6 +6,8 @@ def get_user(request):
     authpol = request.registry.getUtility(IAuthenticationPolicy)
     for name in ('bearer', 'session'):
         policy = authpol.get_policy(name)
+        if policy is None:
+            continue
         user = policy.get_user(request)
         if user:
             return user
