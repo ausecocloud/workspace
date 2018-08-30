@@ -19,17 +19,18 @@ services:
   #     - REDIS_HOSTS=local:redis:6379
 
   workspace:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile-dev
     image: workspace
     volumes:
-      - ./:/code/workspace
+      - ./src/workspace:/code/workspace/src/workspace
     env_file:
       - .env
     ports:
       - "6543:6543"
-    networks:
-      - frontend
-
-
-networks:
-  frontend:
+    command:
+      - paster
+      - serve
+      - --reload
+      - /code/workspace/development.ini

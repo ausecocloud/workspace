@@ -1,0 +1,13 @@
+FROM hub.bccvl.org.au/ecocloud/workspace:latest
+
+RUN pip install --no-cache \
+                ipdb \
+                pyramid_debugtoolbar \
+                pyramid_debugtoolbar_dogpile \
+                waitress \
+                redis
+
+COPY . /code/workspace
+RUN pip install -e /code/workspace
+
+CMD ["pserve", "--reload", "/code/workspace/development.ini"]
