@@ -16,16 +16,12 @@ def download_file(request):
     params = request.oas.validate_params().parameters
     params = params.get('query', {})
 
-    project = params.get('project', None)
-    if not project or '/' in project:
-        raise HTTPBadRequest('Invalid project name')
     path = params.get('path', None)
     if not path:
         raise HTTPBadRequest('Invalid path')
     name = params.get('name', None)
     if not name or '/' in name:
         raise HTTPBadRequest('Invalid name')
-    path = '/'.join((project, path))
     swift = request.registry.getUtility(ISwift)
     temp_url = swift.generate_temp_url(userid, path, name)
     return HTTPFound(temp_url)
@@ -44,13 +40,9 @@ def upload_file(request):
     params = request.params
 
     # required parameters
-    project = params.get('project', None)
-    if not project or '/' in project:
-        raise HTTPBadRequest('Invalid project name')
     path = params.get('path', None)
     if not path:
         raise HTTPBadRequest('Invalid path')
-    path = '/'.join((project, path))
     # get path and file name; there is always one '/' in path, 'project/path|name'
     path, name = path.rsplit('/', 1)
     if not name:
@@ -87,16 +79,12 @@ def delete_file(request):
     params = request.oas.validate_params().parameters
     params = params.get('query', {})
 
-    project = params.get('project', None)
-    if not project or '/' in project:
-        raise HTTPBadRequest('Invalid project name')
     path = params.get('path', None)
     if not path:
         raise HTTPBadRequest('Invalid path')
     name = params.get('name', None)
     if not name or '/' in name:
         raise HTTPBadRequest('Invalid name')
-    path = '/'.join((project, path))
 
     swift = request.registry.getUtility(ISwift)
     swift.delete_file(userid, path, name)

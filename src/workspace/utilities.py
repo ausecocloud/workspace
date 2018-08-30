@@ -123,9 +123,6 @@ class Swift(object):
                     'delimiter': '/',
                     'prefix': object_prefix
                 }):
-            # TODO: we should make this a separate method for projects
-            #       or general, if we want more metadata about listed objects
-            projects = []
             if data['success']:
                 for item in data['listing']:
                     # filter current folder
@@ -138,30 +135,14 @@ class Swift(object):
                     else:
                         if item.get('subdir', None):
                             # it is a pseudo dir
-                            if not path:
-                                # it is a project
-                                # remember as is to stat it later
-                                projects.append(item['subdir'])
-                            else:
-                                yield {
-                                    'name': item.get('subdir')[len(object_prefix):].strip('/'),
-                                    'bytes': 0,
-                                    'content_type': 'application/directory',
-                                }
+                            yield {
+                                'name': item.get('subdir')[len(object_prefix):].strip('/'),
+                                'bytes': 0,
+                                'content_type': 'application/directory',
+                            }
                         else:
                             item['name'] = item['name'][len(object_prefix):]
                             yield item
-                # yield projects
-                if projects:
-                    for res in self.swift.stat(container, projects):
-                        # if folder is not a real object, we may not have headers
-                        headers = res.get('headers', {})
-                        yield {
-                            'name': res['object'][len(object_prefix):].strip('/'),
-                            'description': headers.get('x-object-meta-description', ''),
-                            'created': safe_isodate(headers.get('x-timestamp', None)),
-                            'modified': safe_isodate(headers.get('x-object-meta-mtime', None)),
-                        }
             # skip error handling below
             continue
             # TODO: we are raising an exception here... jumping out fo the

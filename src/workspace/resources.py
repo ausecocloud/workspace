@@ -10,8 +10,6 @@ class Root(object):
 
     __acl__ = [
         (Allow, Authenticated, 'view'),
-        (Allow, Authenticated, 'project/create'),
-        (Allow, Authenticated, 'project/delete'),
         (Allow, Authenticated, 'folders/create'),
         (Allow, Authenticated, 'folders/delete'),
         (Allow, Authenticated, 'file/upload'),

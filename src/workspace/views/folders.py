@@ -1,3 +1,5 @@
+import logging
+
 from pyramid.httpexceptions import HTTPUnauthorized, HTTPBadRequest, HTTPNoContent
 from pyramid.view import view_config
 
@@ -15,12 +17,9 @@ def list_contents(request):
     params = params.get('query', {})
 
     swift = request.registry.getUtility(ISwift)
-    project = params.get('project', None)
-    if not project or '/' in project:
-        raise HTTPBadRequest('Invalid project name')
     path = params.get('path', '').strip('/')
     ret = []
-    for data in swift.list(userid, '/'.join((project, path))):
+    for data in swift.list(userid, path):
         ret.append(data)
     return ret
 
@@ -34,10 +33,6 @@ def create_folder(request):
     params = request.oas.validate_params()
     query = params.parameters['query']
 
-    project = query.get('project', None)
-    if not project or '/' in project:
-        raise HTTPBadRequest('Invalid project name')
-
     path = query.get('path', '').strip('/')
 
     body = params.body
@@ -46,7 +41,7 @@ def create_folder(request):
         raise HTTPBadRequest('Invalid folder name')
 
     swift = request.registry.getUtility(ISwift)
-    res = swift.create_folder(userid, '/'.join((project, path, name)))
+    res = swift.create_folder(userid, '/'.join((path, name)))
     return HTTPNoContent()
 
 
@@ -58,10 +53,6 @@ def delete_folder(request):
         raise HTTPUnauthorized()
     params = request.oas.validate_params().parameters['query']
 
-    project = params.get('project', None)
-    if not project or '/' in project:
-        raise HTTPBadRequest('Invalid project name')
-
     # TODO: maybd use name or foler parameter to identify folder to delee?
     #       would be more consistent with the usage of path in rest of API
     path = params.get('path', '').strip('/')
@@ -70,7 +61,7 @@ def delete_folder(request):
 
     swift = request.registry.getUtility(ISwift)
     res = []
-    for data in swift.delete_folder(userid, '/'.join((project, path))):
+    for data in swift.delete_folder(userid, path):
         # TODO: this contains everything (userid/project/path..)
         res.append(data)
     return res

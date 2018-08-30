@@ -19,12 +19,6 @@ security:
   - token_auth: []
 components:
   parameters:
-    project:
-      name: project
-      in: query
-      description: "A Project name"
-      schema:
-        type: string
     path:
       name: path
       in: query
@@ -33,17 +27,6 @@ components:
       schema:
         type: string
   schemas:
-    Project:
-      type: object
-      required: ["name"]
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-          maxLength: 500
-        owner:
-          type: string
     Folder:
       type: object
       required: ["name"]
@@ -118,7 +101,6 @@ components:
   # callbacks:
 tags:
   - name: stat
-  - name: projects
   - name: folders
   - name: files
 # externalDocs
@@ -161,78 +143,8 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
 
-  /api/v1/projects:
-    summary: "Manage workspace elements."
-    description: ""
-    get:
-      tags:
-        - projects
-      summary: "Get list of projects"
-      description: ""
-      #externalDocs:
-      operationId: "list_projects"
-      responses:
-        "200":
-          description: "List of available projects"
-          content:
-            "application/json":
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Project"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-    post:
-      tags:
-        - projects
-      summary: "Create project"
-      description: ""
-      #externalDocs:
-      operationId: "create_project"
-      requestBody:
-        description: "Describe the project to create"
-        required: true
-        content:
-          "application/json":
-            schema:
-              $ref: "#/components/schemas/Project"
-      responses:
-        "204":
-          $ref: "#/components/responses/Success"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-    delete:
-      tags:
-        - projects
-      summary: "Delete project"
-      description: ""
-      #externalDocs:
-      operationId: "delete_project"
-      # security:
-      parameters:
-        - $ref: "#/components/parameters/project"
-      responses:
-        "200":
-          description: "List of deleted objects"
-          content:
-            "application/json":
-              schema:
-                type: array
-                items:
-                  type: string
-        "204":
-          $ref: "#/components/responses/Success"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "403":
-          $ref: "#/components/responses/Forbidden"
-
   /api/v1/folders:
-    summary: "Get folder listing for project and path"
+    summary: "Get folder listing for path"
     description: ""
     get:
       tags:
@@ -242,7 +154,6 @@ paths:
       operationId: "list_folders"
       # externalDocs:
       parameters:
-        - $ref: '#/components/parameters/project'
         - $ref: '#/components/parameters/path'
       responses:
         "200":
@@ -273,7 +184,6 @@ paths:
             schema:
               $ref: "#/components/schemas/Folder"
       parameters:
-        - $ref: '#/components/parameters/project'
         - $ref: '#/components/parameters/path'
       responses:
         "204":
@@ -291,7 +201,6 @@ paths:
       operationId: "delete_folder"
       # externalDocs:
       parameters:
-        - $ref: '#/components/parameters/project'
         - $ref: '#/components/parameters/path'
       responses:
         "200":
@@ -322,12 +231,6 @@ paths:
       # externalDocs:
       parameters:
         - in: "query"
-          name: "project"
-          description: "Project Name"
-          required: true
-          schema:
-            type: string
-        - in: "query"
           name: "path"
           description: "File Path"
           required: true
@@ -357,12 +260,6 @@ paths:
       # externalDocs:
       parameters:
         - in: "query"
-          name: "project"
-          description: "Project Name"
-          required: true
-          schema:
-            type: string
-        - in: "query"
           name: "path"
           description: "File path including file name"
           required: true
@@ -391,12 +288,6 @@ paths:
       operationId: "delete_file"
       # externalDocs:
       parameters:
-        - in: "query"
-          name: "project"
-          description: "Project Name"
-          required: true
-          schema:
-            type: string
         - in: "query"
           name: "path"
           description: "File Path"
