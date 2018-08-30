@@ -36,7 +36,7 @@ def create_folder(request):
     path = query.get('path', '').strip('/')
 
     body = params.body
-    name = body.get('name', None)
+    name = body.name
     if not name or '/' in name:
         raise HTTPBadRequest('Invalid folder name')
 
