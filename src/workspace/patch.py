@@ -66,6 +66,7 @@ def _upload_object_job(self, conn, container, source, obj, options,
         else:
             put_headers = {'x-object-meta-mtime': "%f" % round(time())}
         res['headers'] = put_headers
+
         # We need to HEAD all objects now in case we're overwriting a
         # manifest object and need to delete the old segments
         # ourselves.
@@ -92,6 +93,7 @@ def _upload_object_job(self, conn, container, source, obj, options,
                         'status': 'skipped-identical'
                     })
                     return res
+
                 cl = int(headers.get('content-length'))
                 mt = headers.get('x-object-meta-mtime')
                 if (path is not None and options['changed']
@@ -121,10 +123,12 @@ def _upload_object_job(self, conn, container, source, obj, options,
                         'error_timestamp': err_time
                     })
                     return res
+
         # Merge the command line header options to the put_headers
         put_headers.update(split_headers(
             options['meta'], 'X-Object-Meta-'))
         put_headers.update(split_headers(options['header'], ''))
+
         # Don't do segment job if object is not big enough, and never do
         # a segment job if we're reading from a stream - we may fail if we
         # go over the single object limit, but this gives us a nice way
@@ -136,10 +140,12 @@ def _upload_object_job(self, conn, container, source, obj, options,
             if options['segment_container']:
                 seg_container = options['segment_container']
             full_size = getsize(path)
+
             segment_futures = []
             segment_pool = self.thread_manager.segment_pool
             segment = 0
             segment_start = 0
+
             while segment_start < full_size:
                 if segment_start + segment_size > full_size:
                     segment_size = full_size - segment_start

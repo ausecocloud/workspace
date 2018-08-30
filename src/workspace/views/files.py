@@ -70,7 +70,7 @@ def upload_file(request):
 
     swift = request.registry.getUtility(ISwift)
     log = logging.getLogger(__name__)
-    log.info('Start Swift upload %s', name)
+    log.info('Start Swift upload %s - %d', name, request.content_length)
     swift.upload_file(userid, path, name,
                       file, request.content_type, request.content_length)
     log.info('Finished Swift upload %s', name)
