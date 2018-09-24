@@ -7,6 +7,7 @@ from swiftclient.service import (
     SwiftService, SwiftError, SwiftUploadObject, SwiftPostObject, get_conn
 )
 from swiftclient.utils import generate_temp_url, LengthWrapper
+from swiftclient.service import SwiftError
 from zope.interface import implementer
 
 from .interfaces import ISwift
@@ -84,7 +85,8 @@ class Swift(object):
             # strip all leading trailing slashes from path
             # deduplicate double slashes
             path = '/'.join(x for x in path.split('/') if x)
-            parts.append(path)
+            if path:
+                parts.append(path)
         if name:
             # build a file path
             if '/' in name or name in ('..', '.'):
@@ -96,6 +98,19 @@ class Swift(object):
             parts.append('')
         return container, '/'.join(parts)
 
+    def _create_container(self, container):
+        return self.swift.post(
+            container=container,
+            options={
+                # swiftservice converts this to X-Container-Meta-Temp-Url-Key
+                'meta': {
+                    'temp-url-key': self.temp_url_key,
+                    # TODO: hard coded 10G quota
+                    'quota-bytes': str(int(10e9)),
+                }
+            }
+        )
+
     def stat(self, user_id, path=''):
         container, object_prefix = self.build_object_name(user_id, path)
         if path:
@@ -103,7 +118,15 @@ class Swift(object):
             pass
         else:
             # container stat requested
-            stat = self.swift.stat(container=container)
+            try:
+                stat = self.swift.stat(container=container)
+            except SwiftError as e:
+                if e.exception.http_status == 404:
+                    # container does not exists
+                    res = self._create_container(container)
+                    stat = self.swift.stat(container=container)
+                else:
+                    raise
             headers = stat['headers']
             return {
                 'used': safe_int(headers.get('x-container-bytes-used', None)),
@@ -123,6 +146,8 @@ class Swift(object):
                     'delimiter': '/',
                     'prefix': object_prefix
                 }):
+            if data['action'] == ['list_container_part'] and not data['success']:
+                data = self._create_container(container)
             if data['success']:
                 for item in data['listing']:
                     # filter current folder
@@ -182,17 +207,7 @@ class Swift(object):
                 # status will be 202 if container already existed
                 if res['response_dict']['status'] == 201:
                     # set up metadata for user container
-                    res = self.swift.post(
-                        container=container,
-                        options={
-                            # swiftservice converts this to X-Container-Meta-Temp-Url-Key
-                            'meta': {
-                                'temp-url-key': self.temp_url_key,
-                                # TODO: hard coded 10G quota
-                                'quota-bytes': str(int(10e9)),
-                            }
-                        }
-                    )
+                    res = self._create_container(container)
             # TODO: project only:
             if res['action'] == 'create_dir_marker':
                 meta = {}
@@ -220,6 +235,7 @@ class Swift(object):
         container, object_path = self.build_object_name(user_id, path)
         # don't use delimiter here, otherwise swift.delete will only see
         # one level of subfolders and won't be able to delete everything
+        # TODO: can this delete the container as well?
         for res in self.swift.delete(
                 container=container,
                 options={
@@ -247,6 +263,8 @@ class Swift(object):
         log = logging.getLogger(__name__)
         log.info('Tool Upload %s', upload_obj)
         for res in self.swift.upload(container, [upload_obj]):
+            if res['action'] == 'create_container':
+                res = self._create_container(container)
             # Getting a funny response iterator here
             # 1. action: create_container
             # 2. action: upload_object
@@ -261,6 +279,7 @@ class Swift(object):
         container, object_name = self.build_object_name(user_id, path, name)
         # TODO: could set options['prefix'] to make sure we don't delete
         #       anything outside project/folder
+        # TODO: coould this delete the container?
         res = self.swift.delete(
             container=container,
             objects=[object_name]
