@@ -107,6 +107,7 @@ class Swift(object):
                     'temp-url-key': self.temp_url_key,
                     # TODO: hard coded 10G quota
                     'quota-bytes': str(int(10e9)),
+                    'access-control-allow-origin': '*',
                 }
             }
         )
