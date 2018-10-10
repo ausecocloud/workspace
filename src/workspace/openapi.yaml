@@ -313,3 +313,36 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "403":
           $ref: "#/components/responses/Forbidden"
+
+  /api/v1/files/tempurl:
+    summary: "Get temp url for a single file"
+    description: ""
+    get:
+      tags:
+        - files
+      summary: "file temp url"
+      # security
+      operationId: "tempurl"
+      # externalDocs:
+      parameters:
+        - in: "query"
+          name: "path"
+          description: "File Path"
+          required: true
+          schema:
+            type: string
+        - in: "query"
+          name: "name"
+          description: "File Name"
+          required: true
+          schema:
+            type: string
+        - in: "query"
+          name: "user"
+          description: "Download file for specific user"
+          required: false
+          schema:
+            type: string
+      responses:
+        "405":
+          description: "Invalid input"

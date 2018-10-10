@@ -6,6 +6,31 @@ from pyramid.view import view_config
 from ..interfaces import ISwift
 
 
+# TODO: this is a duplicate of download_file
+@view_config(route_name='api_v1_files_tempurl', renderer='json',
+             request_method='GET', permission='file/tempurl', cors=True)
+def tempurl(request):
+    userid = request.authenticated_userid
+    if not userid:
+        raise HTTPUnauthorized()
+
+    params = request.oas.validate_params().parameters
+    params = params.get('query', {})
+
+    path = params.get('path', None)
+    if not path:
+        raise HTTPBadRequest('Invalid path')
+    name = params.get('name', None)
+    if not name or '/' in name:
+        raise HTTPBadRequest('Invalid name')
+    swift = request.registry.getUtility(ISwift)
+    temp_url = swift.generate_temp_url(userid, path, name)
+    return {
+        'tempurl': temp_url,
+    }
+
+
+# TODO: this is a duplicate of temp_url
 @view_config(route_name='api_v1_files', renderer='json',
              request_method='GET', permission='view', cors=True)
 def download_file(request):

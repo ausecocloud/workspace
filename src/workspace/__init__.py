@@ -27,6 +27,7 @@ def main(global_config, **settings):
     # app specific stuff
     config.add_route(name='api_v1_stats', pattern='/api/v1/stat')
     config.add_route(name='api_v1_folders', pattern='/api/v1/folders')
+    config.add_route(name='api_v1_files_tempurl', pattern='/api/v1/files/tempurl')
     config.add_route(name='api_v1_files', pattern='/api/v1/files')
 
     # web routes

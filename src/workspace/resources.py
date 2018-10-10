@@ -14,6 +14,7 @@ class Root(object):
         (Allow, Authenticated, 'folders/delete'),
         (Allow, Authenticated, 'file/upload'),
         (Allow, Authenticated, 'file/delete'),
+        (Allow, Authenticated, 'file/tempurl'),
         (Allow, 'admin', 'admin'),
     ]
 
