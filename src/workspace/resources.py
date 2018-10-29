@@ -1,5 +1,4 @@
 from pyramid.security import Allow
-from pyramid.security import Authenticated
 
 
 class Root(object):
@@ -9,12 +8,12 @@ class Root(object):
     __name__ = None
 
     __acl__ = [
-        (Allow, Authenticated, 'view'),
-        (Allow, Authenticated, 'folders/create'),
-        (Allow, Authenticated, 'folders/delete'),
-        (Allow, Authenticated, 'file/upload'),
-        (Allow, Authenticated, 'file/delete'),
-        (Allow, Authenticated, 'file/tempurl'),
+        (Allow, 'workspace/user', 'view'),
+        (Allow, 'workspace/user', 'folders/create'),
+        (Allow, 'workspace/user', 'folders/delete'),
+        (Allow, 'workspace/user', 'file/upload'),
+        (Allow, 'workspace/user', 'file/delete'),
+        (Allow, 'workspace/user', 'file/tempurl'),
         (Allow, 'admin', 'admin'),
     ]
 

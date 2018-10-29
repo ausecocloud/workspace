@@ -1,16 +1,15 @@
 from pyramid.view import view_config
+from pyramid_oidc.interfaces import IOIDCUtility
 
 
 def get_user(request):
-    from pyramid.interfaces import IAuthenticationPolicy
-    authpol = request.registry.getUtility(IAuthenticationPolicy)
-    for name in ('bearer', 'session'):
-        policy = authpol.get_policy(name)
-        if policy is None:
-            continue
-        user = policy.get_user(request)
-        if user:
-            return user
+    claims = request.environ.get('oidc.claims')
+    if claims:
+        return {
+            'id': claims[request.registry.getUtility(IOIDCUtility).userid_claim],
+            'name': claims['name'],
+            'email': claims['email']
+        }
     return {}
 
 
