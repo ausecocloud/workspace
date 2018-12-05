@@ -1,13 +1,16 @@
-FROM python:3.6
+FROM python:3.6-slim-stretch
 
 RUN pip install --no-cache --upgrade pip setuptools \
  && pip install --no-cache --upgrade \
      gunicorn \
      PasteScript \
      openapi-core==0.6.0 \
-     https://github.com/ausecocloud/pyramid_oidc/archive/76e8ad10fdc49d19df2e6a0a50c7b3e36d728c6b.zip \
-     https://github.com/ausecocloud/pyramid_cors/archive/05ce90ce730e5b462731c2bb90cb73b75b55bb51.zip \
-     https://github.com/ausecocloud/pyramid_openapi/archive/5a6efa41128c8b1fe708398af14a0f3bbb66c88f.zip \
-     https://github.com/ausecocloud/workspace/archive/2e2eac33dc961a4092c1c84b7033e4f23ec46854.zip
+     https://github.com/ausecocloud/pyramid_oidc/archive/b1e5db9092f066f4a815515c4d7001801303c541.zip \
+     https://github.com/ausecocloud/pyramid_cors/archive/c79785aff56456bf7543dd17e766492b3953f037.zip \
+     https://github.com/ausecocloud/pyramid_openapi/archive/7425984b9444fe64974f877b1a788c48ee834bd2.zip
 
-CMD ["gunicorn", "--paste", "/etc/workspace/production.ini"]
+RUN pip install --no-cache https://github.com/ausecocloud/workspace/archive/34344ea6f48409afbc23ff03e8ad344d872425ea.zip
+
+COPY development.ini /etc/workspace/workspace.ini
+
+CMD ["gunicorn", "--paste", "/etc/workspace/workspace.ini"]
