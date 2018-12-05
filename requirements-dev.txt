@@ -1,0 +1,4 @@
+ipdb
+pyramid_debugtoolbar
+pyramid_debugtoolbar_dogpile
+pyramid_ipython

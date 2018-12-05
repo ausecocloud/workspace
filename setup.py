@@ -11,15 +11,13 @@ with open(os.path.join(here, 'HISTORY.rst')) as f:
 requires = [
     'pyramid',
     'pyramid_chameleon',
-    'pyramid_webassets',
-    'pyramid_multiauth',
     'pyramid_oidc',
     'pyramid_cors',
     'pyramid_openapi',
-    'webassets-webpack',
     'python-keystoneclient',
     'python-swiftclient',
-    'PyYAML'
+    'PyYAML',
+    'waitress',
 ]
 
 tests_require = [
